@@ -79,7 +79,7 @@ const ChatBox = () => {
               }
               const userResData = await userRes.json();
               console.log('DB Response (POST /users/):', userResData);
-              // Store user_id from response
+              
               setUserData((prev) => ({ ...prev, user_id: userResData.data.user_id }));
               reply = `Hello ${username}! Your info is saved.\nNow type: details#levelOfEducation#profession#maritalStatus#religion#ethnicity\nExample: details#Graduate#Accountant#Divorced#Muslim#Somali`;
               setStep('details');
@@ -103,7 +103,7 @@ const ChatBox = () => {
             } else {
               const updatedUserData = {
                 ...userData,
-                education_level: education, // Match backend column name
+                education_level: education, 
                 profession,
                 marital_status: maritalStatus,
                 religion,
@@ -158,112 +158,116 @@ const ChatBox = () => {
               setStep('match');
             } else {
               reply = 'Please describe yourself using: MYSELF I am...';
-            }
-          } else if (cleanInput.startsWith('match#') && step === 'match') {
-            const parts = input.split('#');
-            console.log('Match input parts:', parts);
-            if (parts.length === 3) {
-              const [_, ageRange, town] = parts;
-              const [minAge, maxAge] = ageRange.split('-').map(Number);
-              if (isNaN(minAge) || isNaN(maxAge) || minAge >= maxAge || minAge < 18 || maxAge > 80) {
-                reply = 'Age range must be valid (e.g., 23-25) and between 18-80.';
+            } }else if (cleanInput.startsWith('match#') && step === 'match') {
+               const parts = input.split('#');
+                  console.log('Match input parts:', parts);
+                  if (parts.length === 3) {
+               const [_, ageRange, town] = parts;
+                    const [minAge, maxAge] = ageRange.split('-').map(Number);
+                    if (isNaN(minAge) || isNaN(maxAge) || minAge >= maxAge || minAge < 18 || maxAge > 80) {
+                      reply = 'Age range must be valid (e.g., 23-25) and between 18-80.';
               } else {
-                const matchCriteria = { age_min: minAge, age_max: maxAge, town, gender: userData.gender === 'male' ? 'female' : 'male' };
-                console.log('Sending to DB (GET /matches):', JSON.stringify(matchCriteria));
-                const matchRes = await fetch(
-                  `http://127.0.0.1:5000/matches/?age_min=${minAge}&age_max=${maxAge}&town=${town}&gender=${matchCriteria.gender}`,
-                  {
-                    headers: { 'Accept': 'application/json' }
-                  }
-                );
-                if (!matchRes.ok) {
-                  throw new Error(`HTTP error! Status: ${matchRes.status}`);
-                }
-                const matchesData = await matchRes.json();
-                console.log('DB Response (GET /matches):', matchesData);
-                setMatches(matchesData.data || matchesData); // Adjust based on backend response structure
-                setMatchIndex(0);
-                if (matchesData.data?.length > 0 || matchesData.length > 0) {
-                  const matchesArray = matchesData.data || matchesData;
-                  const batch = matchesArray.slice(0, 3);
-                  const matchDescriptions = batch.map(match =>
-                    `${match.username} aged ${match.age}, ${match.phone_number}.`
-                  ).join('\n');
-                  reply = `We have ${matchesArray.length} ${userData.gender === 'male' ? 'ladies' : 'gentlemen'} who match your choice! We will send you details of ${Math.min(3, matchesArray.length) } of them:\n${matchDescriptions}`;
-                  if (matchesArray.length > 3) {
-                    reply += `\nSend NEXT to receive details of the remaining ${matchesArray.length - 3} ${userData.gender === 'male' ? 'ladies' : 'gentlemen'}`;
-                  }
-                } else {
-                  reply = 'No matches found. Try a different age range or town.';
-                }
-              }
-            } else {
-              reply = 'Format: match#ageRange#town';
-            }
-          } else if (cleanInput === 'next' && step === 'match' && matches.length > matchIndex + 3) {
-            const batch = matches.slice(matchIndex + 3, matchIndex + 6);
-            setMatchIndex(prev => prev + 3);
-            const matchDescriptions = batch.map(match =>
-              `${match.username} aged ${match.age}, ${match.phone_number}.`
-            ).join('\n');
-            reply = `${matchDescriptions}\nSend NEXT to receive details of the remaining ${matches.length - matchIndex - 6} ${userData.gender === 'male' ? 'ladies' : 'gentlemen'}`;
-          } else if (cleanInput.startsWith('describe ') && step === 'match') {
-            const phone_number = input.split(' ')[1];
-            console.log('Fetching details for phone:', phone_number);
-            const matchRes = await fetch(`http://127.0.0.1:5000/users/phone/${phone_number}`, {
-              headers: { 'Accept': 'application/json' }
-            });
-            if (!matchRes.ok) {
-              throw new Error(`HTTP error! Status: ${matchRes.status}`);
-            }
-            const match = await matchRes.json();
-            console.log('DB Response (GET /users/phone/):', match);
-            if (match && match.data?.phone_number) {
-              const matchData = match.data;
-              const details = `${matchData.username} aged ${matchData.age}, ${matchData.county} County, ${matchData.town} town, ${matchData.education_level}, ${matchData.profession}, ${matchData.marital_status}, ${matchData.religion}, ${matchData.ethnicity}.`;
-              reply = `${details}\n${matchData.self_description ? `${matchData.username} describes themselves as ${matchData.self_description}` : 'No description available.'}\nSend DESCRIBE ${matchData.phone_number} to get more details about ${matchData.username}.`;
-              const notifyData = {
-                requester: userData,
-                requested: matchData
-              };
-              console.log('Sending to DB (POST /notify):', JSON.stringify(notifyData));
-              const notifyRes = await fetch('http://127.0.0.1:5000/notify', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json'
-                },
-                body: JSON.stringify(notifyData)
-              });
-              if (!notifyRes.ok) {
-                throw new Error(`HTTP error! Status: ${notifyRes.status}`);
-              }
-              const notifyResData = await notifyRes.json();
-              console.log('DB Response (POST /notify):', notifyResData);
-              reply += `\nHi ${matchData.username}, a ${userData.gender} called ${userData.username} is interested in you and requested your details. They are aged ${userData.age} based in ${userData.town}.\nDo you want to know more about them? Send YES`;
-            } else {
-              reply = 'Invalid phone number or no match found.';
-            }
-          } else if (cleanInput === 'yes' && step === 'match') {
-            console.log('Fetching requester for user:', userData.phone_number);
-            const requesterRes = await fetch(`http://127.0.0.1:5000/requester/${userData.phone_number}`, {
-              headers: { 'Accept': 'application/json' }
-            });
-            if (!requesterRes.ok) {
-              throw new Error(`HTTP error! Status: ${requesterRes.status}`);
-            }
-            const requester = await requesterRes.json();
-            console.log('DB Response (GET /requester/):', requester);
-            if (requester && requester.data?.phone_number) {
-              const requesterData = requester.data;
-              reply = `${requesterData.username} aged ${requesterData.age}, ${requesterData.county} County, ${requesterData.town} town, ${requesterData.education_level}, ${requesterData.profession}, ${requesterData.marital_status}, ${requesterData.religion}, ${requesterData.ethnicity}.\n${requesterData.self_description ? `${requesterData.username} describes themselves as ${requesterData.self_description}` : 'No description available.'}\nSend DESCRIBE ${requesterData.phone_number} to get more details about ${requesterData.username}.`;
-            } else {
-              reply = 'No requester details available.';
-            }
-          } else {
-            reply = 'Unrecognized input.\nType HELP to see valid commands.';
-          }
+                     const matchCriteria = {
+                  age_min: minAge,
+                  age_max: maxAge,
+                  town,
+                  gender: userData.gender === 'male' ? 'female' : 'male'
+             };
+              console.log('Sending to DB (GET /matches):', JSON.stringify(matchCriteria));
+              const matchRes = await fetch(
+             `http://127.0.0.1:5000/matches/?age_min=${minAge}&age_max=${maxAge}&town=${town}&gender=${matchCriteria.gender}`,
+             { headers: { 'Accept': 'application/json' } }
+               );
+              if (!matchRes.ok) throw new Error(`HTTP error! Status: ${matchRes.status}`);
+         const matchesData = await matchRes.json();
+            console.log('DB Response (GET /matches):', matchesData);
+            setMatches(matchesData.data || matchesData);
+              setMatchIndex(0);
 
+              if ((matchesData.data?.length || matchesData.length) > 0) {
+        const matchesArray = matchesData.data || matchesData;
+        const batch = matchesArray.slice(0, 3);
+        const matchDescriptions = batch.map(match =>
+          `${match.username} aged ${match.age}, ${match.phone_number}.`
+        ).join('\n');
+        reply = `We have ${matchesArray.length} ${userData.gender === 'male' ? 'ladies' : 'gentlemen'} who match your choice! We will send you details of ${Math.min(3, matchesArray.length)} of them:\n${matchDescriptions}\n\nTo know more about any of them, type: DESCRIBE <phone_number>\nTo see more matches, type: NEXT`;
+      } else {
+        reply = 'No matches found. Try a different age range or town.';
+      }
+    }
+  } else {
+    reply = 'Format: match#ageRange#town';
+  }
+
+} else if (cleanInput === 'next' && step === 'match' && matches.length > matchIndex + 3) {
+  const batch = matches.slice(matchIndex + 3, matchIndex + 6);
+  setMatchIndex(prev => prev + 3);
+  const matchDescriptions = batch.map(match =>
+    `${match.username} aged ${match.age}, ${match.phone_number}.`
+  ).join('\n');
+  reply = `${matchDescriptions}\n\nTo see more matches, type: NEXT\nTo get details of any person, type: DESCRIBE <phone_number>`;
+
+} else if (cleanInput.startsWith('describe ') && step === 'match') {
+  const phone_number = input.split(' ')[1];
+  console.log('Fetching details for phone:', phone_number);
+  const matchRes = await fetch(`http://127.0.0.1:5000/users/phone/${phone_number}`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!matchRes.ok) throw new Error(`HTTP error! Status: ${matchRes.status}`);
+  const match = await matchRes.json();
+  console.log('DB Response (GET /users/phone/):', match);
+
+  if (!match || !match.data?.phone_number) {
+    reply = 'Sorry, no match found with that phone number. Please check the number and try again.';
+  } else {
+    const matchData = match.data;
+    const details = `${matchData.username} aged ${matchData.age}, ${matchData.county} County, ${matchData.town} town, ${matchData.education_level}, ${matchData.profession}, ${matchData.marital_status}, ${matchData.religion}, ${matchData.ethnicity}.`;
+    reply = `${details}\n${matchData.self_description ? `${matchData.username} describes themselves as ${matchData.self_description}.` : 'No description available.'}`;
+
+    // Notify logic
+    const notifyData = {
+      requester: userData,
+      requested: matchData
+    };
+    console.log('Sending to DB (POST /notify):', JSON.stringify(notifyData));
+    const notifyRes = await fetch('http://127.0.0.1:5000/users/notify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(notifyData)
+    });
+    if (!notifyRes.ok) throw new Error(`HTTP error! Status: ${notifyRes.status}`);
+    const notifyResData = await notifyRes.json();
+    console.log('DB Response (POST /notify):', notifyResData);
+
+   const messageToUser2 = `Hi ${matchData.username}, a ${userData.gender} called ${userData.username} is interested in you and requested your details. They are aged ${userData.age} based in ${userData.town}. Do you want to know more about them? Type YES`;
+    console.log(`message to user2: "${messageToUser2}"`);
+
+  }
+
+} else if (cleanInput === 'yes' && step === 'match') {
+  console.log('Fetching requester for user:', userData.phone_number);
+  const requesterRes = await fetch(`http://127.0.0.1:5000/requester/${userData.phone_number}`, {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!requesterRes.ok) throw new Error(`HTTP error! Status: ${requesterRes.status}`);
+  const requester = await requesterRes.json();
+  console.log('DB Response (GET /requester/):', requester);
+
+  if (requester && requester.data?.phone_number) {
+    const r = requester.data;
+    reply = `${r.username} aged ${r.age}, ${r.county} County, ${r.town} town, ${r.education_level}, ${r.profession}, ${r.marital_status}, ${r.religion}, ${r.ethnicity}.\n${r.self_description ? `${r.username} describes themselves as ${r.self_description}.` : 'No description available.'}\nSend DESCRIBE ${r.phone_number} to get more details about ${r.username}.`;
+  } else {
+    reply = 'No requester details available.';
+  }
+}
+
+
+
+
+          
         setMessages((prev) => [...prev, { type: 'system', text: reply }]);
       } catch (err) {
         console.error('Error in handleSend:', err.message, err.stack);

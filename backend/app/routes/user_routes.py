@@ -2,8 +2,12 @@ from flask import Blueprint, request, jsonify
 from app.services import UserService
 from app.utils import validate_user_data, format_response
 from werkzeug.exceptions import BadRequest
+from flask_cors import cross_origin
+from app.extensions import db
+
 
 user_bp = Blueprint('users', __name__)
+
 
 @user_bp.route('/', methods=['POST', 'OPTIONS'])
 def register_user():
@@ -109,24 +113,38 @@ def search_matches():
     except Exception as e:
         return jsonify(format_response(str(e))), 500
 
-@user_bp.route('/notify', methods=['POST'])
+
+
+from flask_cors import cross_origin
+
+@user_bp.route('/notify', methods=['POST', 'OPTIONS'])
+@cross_origin(origins=['http://localhost:5173'], methods=['POST', 'OPTIONS'])
 def notify_user():
+    if request.method == 'OPTIONS':
+        
+        return '', 200
+
     try:
         data = request.get_json()
         requester = data.get('requester')
         requested = data.get('requested')
-        # Store notification in the database
-        from app.models import Notification
+
+        from app.models.notifications import Notification
         notification = Notification(
             requester_phone=requester['phone_number'],
             requested_phone=requested['phone_number']
         )
         db.session.add(notification)
         db.session.commit()
+
         return jsonify(format_response('Notification sent')), 201
+
     except Exception as e:
         db.session.rollback()
         return jsonify(format_response(str(e))), 500
+
+
+
 
 @user_bp.route('/requester/<phone_number>', methods=['GET'])
 def get_requester(phone_number):
