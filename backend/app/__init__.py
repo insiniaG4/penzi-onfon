@@ -10,13 +10,13 @@ from app.routes.user_routes import user_bp
 def create_app():
     app = Flask(__name__)
     
-    # ✅ Use ONLY this CORS config
-    CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
+    
+    CORS(app, origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://52.48.121.185:8080", "http://52.48.121.185:8000"], supports_credentials=True)
 
     app.config.from_object(Config)
     db.init_app(app)
 
-    # ✅ Register blueprints
+    
     app.register_blueprint(user_bp, url_prefix="/users")
     app.register_blueprint(sms_log_bp, url_prefix="/sms_log")
     app.register_blueprint(message_bp, url_prefix="/messages")

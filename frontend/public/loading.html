@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penzi - Loading...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #ec4899, #ef4444, #e11d48);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .loading-container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand {
+            margin-bottom: 2rem;
+        }
+
+        .brand h1 {
+            font-size: 4rem;
+            font-weight: bold;
+            color: white;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .brand p {
+            font-size: 1.2rem;
+            color: #e5e7eb;
+            font-weight: 300;
+        }
+
+        .spinner-container {
+            margin: 2rem 0;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+        .spinner-ring:nth-child(1) {
+            border-top-color: white;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .spinner-ring:nth-child(2) {
+            border-top-color: #f43f5e;
+            animation: spin 1.5s linear infinite reverse;
+            animation-delay: -0.3s;
+            width: 60px;
+            height: 60px;
+            top: 10px;
+            left: 10px;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            font-weight: 500;
+        }
+
+        .dots {
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: white;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        .dot:nth-child(3) { animation-delay: 0s; }
+
+        .background-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.7;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            background: #ec4899;
+            top: -150px;
+            right: -150px;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            width: 250px;
+            height: 250px;
+            background: #ef4444;
+            bottom: -125px;
+            left: -125px;
+            animation-delay: 2s;
+        }
+
+        .shape:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            background: #e11d48;
+            top: 50%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+            }
+            50% {
+                transform: translateY(-20px) scale(1.1);
+            }
+        }
+
+        .progress-bar {
+            width: 300px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 1.5rem auto;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ec4899, #e11d48);
+            border-radius: 2px;
+            animation: progress 3s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        @media (max-width: 768px) {
+            .brand h1 {
+                font-size: 3rem;
+            }
+            
+            .progress-bar {
+                width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="loading-container">
+        <div class="brand">
+            <h1>PENZI</h1>
+            <p>Connect • Chat • Share</p>
+        </div>
+
+        <div class="spinner-container">
+            <div class="spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+
+        <div class="loading-text">
+            Loading your experience
+            <span class="dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // Redirect to main app after loading
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 4000);
+    </script>
+</body>
+</html>

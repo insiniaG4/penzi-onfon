@@ -5,7 +5,13 @@ from datetime import datetime
 class UserService:
     @staticmethod
     def create_user(data):
-        """Create a new user"""
+        """Create a new user or return existing user if phone number exists"""
+        # Check if user with this phone number already exists
+        existing_user = UserService.get_user_by_phone(data['phone_number'])
+        if existing_user:
+            # User already exists, return the existing user
+            return existing_user
+            
         new_user = User(
             phone_number=data['phone_number'],
             username=data.get('username'),
@@ -57,12 +63,16 @@ class UserService:
             user.ethnicity = data.get('ethnicity', user.ethnicity)
             user.self_description = data.get('self_description', user.self_description)
             
+            # Update registration status if provided
+            if 'registration_status' in data:
+                user.registration_status = data['registration_status']
+            
             # Update timestamp
             user.updated_at = datetime.utcnow()
             
             # Check if profile is now complete
             if UserService._is_user_profile_complete(user):
-                user.registration_status = 'complete'
+                user.registration_status = 'Complete'
             
             db.session.commit()
             return user
@@ -71,23 +81,23 @@ class UserService:
     @staticmethod
     def _is_user_profile_complete(user):
         """Check if user profile is complete"""
-        required_fields = ['username', 'age', 'gender', 'county', 'town']
+        required_fields = ['username', 'age', 'gender', 'county', 'town', 'education_level', 'profession', 'marital_status', 'religion', 'ethnicity', 'self_description']
         return all(getattr(user, field) for field in required_fields)
 
     @staticmethod
     def get_complete_users():
         """Get all users with complete profiles"""
-        return User.query.filter_by(registration_status='complete').all()
+        return User.query.filter_by(registration_status='Complete').all()
 
     @staticmethod
     def get_incomplete_users():
         """Get all users with incomplete profiles"""
-        return User.query.filter_by(registration_status='incomplete').all()
+        return User.query.filter(User.registration_status != 'Complete').all()
 
     @staticmethod
     def search_users(criteria):
         """Search users based on criteria"""
-        query = User.query.filter_by(registration_status='complete')
+        query = User.query.filter_by(registration_status='Complete')
         
         if criteria.get('age_min'):
             query = query.filter(User.age >= criteria['age_min'])
@@ -95,6 +105,8 @@ class UserService:
             query = query.filter(User.age <= criteria['age_max'])
         if criteria.get('gender'):
             query = query.filter(User.gender == criteria['gender'])
+        if criteria.get('town'):
+            query = query.filter(User.town == criteria['town'])
         if criteria.get('county'):
             query = query.filter(User.county == criteria['county'])
         if criteria.get('education_level'):
@@ -110,7 +122,7 @@ class UserService:
     def get_user_stats():
         """Get user statistics"""
         total_users = User.query.count()
-        complete_profiles = User.query.filter_by(registration_status='complete').count()
+        complete_profiles = User.query.filter_by(registration_status='Complete').count()
         incomplete_profiles = total_users - complete_profiles
         
         return {

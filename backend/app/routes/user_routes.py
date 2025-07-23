@@ -118,7 +118,7 @@ def search_matches():
 from flask_cors import cross_origin
 
 @user_bp.route('/notify', methods=['POST', 'OPTIONS'])
-@cross_origin(origins=['http://localhost:5173'], methods=['POST', 'OPTIONS'])
+@cross_origin(origins=['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173'], methods=['POST', 'OPTIONS'])
 def notify_user():
     if request.method == 'OPTIONS':
         
